@@ -13,7 +13,15 @@ const createProduct = asyncHandler(async (req, res) => {
 });
 
 const fetchAllProducts = asyncHandler(async (req, res) => {
-    let query = Product.find({});
+    let condation = {}
+    if (!req.query.admin) {
+        condation.delated = {
+            $ne: true
+        }
+    }
+    let query = Product.find(condation);
+
+
     let totCountQuery = Product.find({});
 
 

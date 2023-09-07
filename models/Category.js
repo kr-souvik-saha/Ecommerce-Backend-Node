@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
+const {
+    Schema
+} = mongoose
 
-const categorySchema = new mongoose.Schema({
+const categorySchema = new Schema({
     label: {
         type: String,
         required: [true, 'Brand label is required'],
