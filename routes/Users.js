@@ -7,7 +7,7 @@ const {
 
 const router = express.Router();
 
-router.get('/:id', fetchUserById);
+router.get('/own', fetchUserById);
 router.patch('/:id', updateUser)
 
 exports.router = router;

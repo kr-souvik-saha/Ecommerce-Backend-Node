@@ -4,11 +4,12 @@ const Cart = require('../models/Cart');
 
 const fetchCartByUser = asyncHandler(async (req, res) => {
     const {
-        user
-    } = req.query;
+        id
+    } = req.user;
+
 
     const cart = await Cart.find({
-        user: user
+        user: id
     }).populate('product');
 
     if (cart) {
@@ -21,18 +22,21 @@ const fetchCartByUser = asyncHandler(async (req, res) => {
 });
 
 const addToCart = asyncHandler(async (req, res) => {
-    const cart = new Cart(req.body);
 
-    const doc = await cart.save();
-    const result = await doc.populate('product');
-
-    if (result) {
-        res.status(200).json(result);
-    } else {
-        res.status(400).json({
-            message: "Data not found"
+    try {
+        const {
+            id
+        } = req.user;
+        const cart = new Cart({
+            ...req.body,
+            user: id
         });
-    }
+        const doc = await cart.save();
+        const result = await doc.populate('product');
+        res.status(200).json(result);
+    } catch (err) {
+        res.status(400).json(err);
+    };
 });
 
 const deleteFromCart = asyncHandler(async (req, res) => {

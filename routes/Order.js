@@ -10,7 +10,7 @@ const {
 const router = express.Router();
 
 
-router.get('/user', fetchOrdersByUser);
+router.get('/own', fetchOrdersByUser);
 router.post('/', createOrder);
 router.patch('/:id', updateOrder);
 router.delete('/:id', deleteOrder);

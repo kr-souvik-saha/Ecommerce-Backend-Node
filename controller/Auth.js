@@ -1,53 +1,71 @@
 const asyncHandler = require('express-async-handler');
-const User = require('../models/User')
+const User = require('../models/User');
+const crypto = require('crypto');
+const {
+    sanitizeUser
+} = require('../services/common');
+const SECRET_KEY = 'SECRET_KEY';
+const jwt = require('jsonwebtoken');
 
 
 const createUser = asyncHandler(async (req, res) => {
-    const user = await User.create(req.body);
 
-    if (user) {
-        res.status(200).json(user);
-    } else {
-        res.status(400).json({
-            "message": "No Records Found"
-        });
+    try {
+        const salt = crypto.randomBytes(16);
+        crypto.pbkdf2(
+            req.body.password,
+            salt,
+            310000,
+            32,
+            'sha256',
+            async function (err, hashedPassword) {
+                const user = new User({
+                    ...req.body,
+                    password: hashedPassword,
+                    salt
+                });
+                const doc = await user.save();
+
+                req.login(sanitizeUser(doc), (err) => { // this also calls serializer and adds to session
+                    if (err) {
+                        res.status(400).json(err);
+                    } else {
+                        const token = jwt.sign(sanitizeUser(doc), SECRET_KEY);
+                        res.cookie('jwt', token, {
+                                expires: new Date(Date.now() + 3600000),
+                                httpOnly: true,
+                            })
+                            .status(201)
+                            .json(token);
+                    }
+                });
+            }
+        );
+    } catch (err) {
+        res.status(400).json(err);
     }
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-    const {
-        email,
-        password
-    } = req.body;
-
-    const user = await User.findOne({
-        email
-    })
-
-    if (!user) {
-        res.status(401).json({
-            message: 'Invalid user'
+    res.cookie('jwt', req.user.token, {
+            expires: new Date(Date.now() + 3600000),
+            httpOnly: true,
         })
-    } else {
-        if (user.password === password) {
-            res.status(200).json({
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                addresses: user.addresses,
-                role: user.role
-
-            });
-        } else {
-            res.status(401).json({
-                message: 'invalid credentials'
-            });
-        }
-    }
+        .status(201)
+        .json(req.user.token);
 })
+
+
+const checkUser = async (req, res) => {
+    res.json({
+        status: 'success',
+        user: req.user
+    });
+};
 
 
 module.exports = {
     createUser,
-    loginUser
+    loginUser,
+    checkUser
 };

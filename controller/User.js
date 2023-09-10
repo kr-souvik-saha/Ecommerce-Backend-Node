@@ -5,24 +5,28 @@ const User = require('../models/User')
 
 
 const fetchUserById = asyncHandler(async (req, res) => {
+
     const {
         id
-    } = req.params;
-    const user = await User.findById(id);
-
-    if (user) {
-        res.status(200).json(user);
-    } else {
-        res.status(400).json({
-            "message": "No Records Found"
+    } = req.user;
+    try {
+        const user = await User.findById(id);
+        res.status(200).json({
+            id: user.id,
+            addresses: user.addresses,
+            email: user.email,
+            role: user.role
         });
+    } catch (err) {
+        res.status(400).json(id);
     }
+
 });
 
 const updateUser = asyncHandler(async (req, res) => {
     const {
         id
-    } = req.params;
+    } = req.user;
 
     const user = await User.findByIdAndUpdate(id, req.body);
     const updatedUser = await User.findById(id);

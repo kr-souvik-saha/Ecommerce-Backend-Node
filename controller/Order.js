@@ -3,14 +3,14 @@ const Order = require('../models/Order');
 
 const fetchOrdersByUser = asyncHandler(async (req, res) => {
     const {
-        user
-    } = req.query;
+        id
+    } = req.user;
 
 
 
     try {
         const orders = await Order.find({
-            user: user
+            user: id
         });
         res.status(200).json(orders);
 
