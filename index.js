@@ -38,17 +38,17 @@
 
 
 
- const SECRET_KEY = 'SECRET_KEY';
+
  // JWT options
  const opts = {};
  opts.jwtFromRequest = cookieExtractor;
- opts.secretOrKey = SECRET_KEY; // TODO: should not be in code;
+ opts.secretOrKey = process.env.JWT_SECRET_KEY;
 
  //middlewares
  server.use(express.static('build'))
  server.use(
      session({
-         secret: 'keyboard cat',
+         secret: process.env.SESSION_KEY,
          resave: false, // don't save session if unmodified
          saveUninitialized: false, // don't create session until something stored
      })
@@ -100,7 +100,7 @@
                                  message: 'invalid credentials'
                              });
                          }
-                         const token = jwt.sign(sanitizeUser(user), SECRET_KEY);
+                         const token = jwt.sign(sanitizeUser(user), process.env.JWT_SECRET_KEY);
                          done(null, {
                              token
                          }); // this lines sends to serializer
@@ -155,7 +155,7 @@
 
  //  Payment
 
- const stripe = require("stripe")('sk_test_51NqXn4SCmNpXZIpPToLTWfSXZL6XQ1Avtzpku4KTJLxhzBeFQJOH5p6OV5DwsO2nSL2GIMJ1aoOcAvAPrDXKAloh00mCvF1g4d');
+ const stripe = require("stripe")(process.env.STRIPE_SERVER_KEY);
 
 
  server.post("/create-payment-intent", async (req, res) => {
@@ -181,7 +181,7 @@
 
  // TODO: we will capture actual order after deploying out server live on public URL
 
- const endpointSecret = "whsec_0e1456a83b60b01b3133d4dbe06afa98f384c2837645c364ee0d5382f6fa3ca2";
+ const endpointSecret = process.env.ENDPOINT_SECRET;
 
  server.post('/webhook', express.raw({
      type: 'application/json'
