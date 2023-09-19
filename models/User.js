@@ -27,7 +27,11 @@ const userSchema = new Schema({
     name: {
         type: String
     },
-    salt: Buffer
+    salt: Buffer,
+    resetPasswordToken: {
+        type: String,
+        default: ''
+    }
 
 })
 

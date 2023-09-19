@@ -2,7 +2,8 @@ const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
 const crypto = require('crypto');
 const {
-    sanitizeUser
+    sanitizeUser,
+    sendMail
 } = require('../services/common');
 const SECRET_KEY = 'SECRET_KEY';
 const jwt = require('jsonwebtoken');
@@ -47,12 +48,18 @@ const createUser = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-    res.cookie('jwt', req.user.token, {
+
+    const user = req.user;
+    res
+        .cookie('jwt', user.token, {
             expires: new Date(Date.now() + 3600000),
             httpOnly: true,
         })
         .status(201)
-        .json(req.user.token);
+        .json({
+            id: user.id,
+            role: user.role
+        });
 })
 
 
@@ -63,9 +70,98 @@ const checkUser = async (req, res) => {
     });
 };
 
+const resetPasswordRequest = async (req, res) => {
+    const email = req.body.email;
+
+    const user = await User.findOne({
+        email: email
+    });
+    if (user) {
+        const token = crypto.randomBytes(48).toString('hex');
+        user.resetPasswordToken = token;
+        await user.save()
+
+        const resetPageLink = 'http://localhost:3000/reset-password?token=' + token + '&email=' + email;
+        const subject = "reset password for E-commerce"
+        const html = `<p>Click href='${resetPageLink}'</p>`
+
+        if (email) {
+
+
+            const response = await sendMail({
+                to: email,
+                subject,
+                html
+            });
+            res.json(response)
+        } else {
+
+        }
+    } else {
+
+    }
+
+
+
+}
+
+const resetPassword = async (req, res) => {
+    const {
+        email,
+        password,
+        token
+    } = req.body;
+
+    const user = await User.findOne({
+        email: email,
+        resetPasswordToken: token
+    });
+    if (user) {
+        const salt = crypto.randomBytes(16);
+        crypto.pbkdf2(
+            password,
+            salt,
+            310000,
+            32,
+            'sha256',
+            async function (err, hashedPassword) {
+                user.password = hashedPassword;
+                user.salt = salt;
+                await user.save();
+                const subject = 'password successfully reset for e-commerce';
+                const html = `<p>Successfully able to Reset Password</p>`;
+                if (email) {
+                    const response = await sendMail({
+                        to: email,
+                        subject,
+                        html
+                    });
+                    res.json(response);
+                } else {
+                    res.sendStatus(400);
+                }
+            }
+        );
+    } else {
+        res.sendStatus(400);
+    }
+}
+
+const logout = async (req, res) => {
+    res
+        .cookie('jwt', null, {
+            expires: new Date(Date.now()),
+            httpOnly: true,
+        })
+        .sendStatus(200)
+}
+
 
 module.exports = {
     createUser,
     loginUser,
-    checkUser
+    checkUser,
+    resetPasswordRequest,
+    resetPassword,
+    logout
 };

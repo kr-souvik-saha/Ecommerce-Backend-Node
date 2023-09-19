@@ -1,4 +1,5 @@
 const passport = require('passport');
+const nodemailer = require('nodemailer');
 
 exports.isAuth = (req, res, done) => {
     return passport.authenticate('jwt')
@@ -16,7 +17,33 @@ exports.cookieExtractor = function (req) {
     if (req && req.cookies) {
         token = req.cookies['jwt'];
     }
-    //TODO : this is temporary token for testing without cookie
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0ZmQ2OGQ2YTI1NTYzOWFmYWY2ZjQzOSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTY5NDg3NjE2OH0.cnCAuTMQqp9ucND6DkUrIWKQikn8klwW5UKKixFWwRg"
+    console.log('token' + token);
     return token;
 };
+
+const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+        // TODO: replace `user` and `pass` values from <https://forwardemail.net>
+        user: "souviksaha1606@gmail.com",
+        pass: process.env.MAIL_PASSWORD,
+    },
+});
+
+exports.sendMail = async function ({
+    to,
+    subject,
+    text,
+    html
+}) {
+    let info = await transporter.sendMail({
+        from: '"E-commerce" <souviksaha1606@gmail.com>', // sender address
+        to,
+        subject,
+        text,
+        html
+    });
+    return info;
+}
